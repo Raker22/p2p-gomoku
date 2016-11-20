@@ -78,7 +78,7 @@ var me = new Peer({}); // this player's peer connection
 var connection = null; // connection to the other player
 var myTurn = false;
 
-canvas.on('mouseup', function(e) {
+canvas.addEventListener('mouseup', function(e) {
     // place a stone in the box clicked if it is this player's turn and it is empty
     myTurn = false;
     // e.offsetX
