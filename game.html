@@ -1,6 +1,13 @@
 <html>
 <head>
-    <script src="vendor/peer.min.js"></script>
+    <script src="peer.min.js"></script>
+    <style type="text/css">
+        img {
+            height: 1.3em;
+            vertical-align: bottom;
+            visibility: hidden;
+        }
+    </style>
 </head>
 <body>
     <div>
@@ -8,10 +15,14 @@
     </div>
     <div>
         <input id="opponent_id" type="text" placeholder="Player ID"/>
-        <input id="connect_button" type="button" value="connect"/>
+        <input id="connect_button" type="button" value="Connect"/>
+        <img id="connection_spinner" src="src/spinner.gif" alt="spinner" />
     </div>
 
-    <div id="info"></div>
+    <div>
+        <span id="info"></span>
+        <img id="turn_spinner" src="src/spinner.gif" alt="spinner" />
+    </div>
     <canvas id="canvas" width=800 height=800></canvas>
 
     <script src="gomoku.js"></script>
