@@ -42,12 +42,49 @@ function Board() {
         // add the stone to the specified box
 
         // check for win
-        return this.checkWin(color);
+        return this.checkWin(color, row, col);
     };
 
-    this.checkWin = function(stoneColor) {
+    this.checkWin = function(color, row, col) {
         // check if the corresponding player won
+        var checkRow = row;
+        var checkCol = col;
+
+        for (var i = 0; i < WIN_DIRECTIONS.length; i++) {
+            // check each direction starting at the stone
+            var numInRow = 1; // this stone plus the other stones in the line
+
+            for (var n = 1; n >= -1; n -= 2) {
+                // check in the direction and the opposite
+                var dRow = WIN_DIRECTIONS[i][0] * n;
+                var dCol = WIN_DIRECTIONS[i][0] * n;
+                var checkRow = row + dRow;
+                var checkCol = col + dCol;
+
+                while (this.isValid(checkRow, checkCol) && this.data[checkRow, checkCol] === color) {
+                    // continue until the edge of the board or not this color is reached
+                    numInRow++;
+                    checkRow += dRow;
+                    checkCol += dCol;
+                }
+
+                if (numInRow >= NUM_TO_WIN) {
+                    // there are enough in a row so someone won
+                    return true;
+                }
+            }
+        }
+
+        // if we got to the end then 
         return false;
+    };
+
+    this.isValid = function(row, col) {
+        // space is on the board
+        return row >= 0 &&
+            row < BOARD_SIZE &&
+            col >= 0 &&
+            col < BOARD_SIZE;
     };
 
     this.isEmpty = function(row, col) {
@@ -70,6 +107,9 @@ function Stone(color) {
 var WHITE = 1;
 var EMPTY = 0;
 var BLACK = -1; // plays first
+var WIN_DIRECTIONS = [[1,0], [0,1], [1,1], [1,-1]]; // directions you can win in
+var BOARD_SIZE = 19; // number of spaces on the playing board
+var NUM_TO_WIN = 5; // number of stones in a row to win
 
 // info strings
 var INFO_START = 'Enter a player\'s ID and click "Connect" to play Gomoku with them.';
@@ -87,14 +127,13 @@ var infoDisplay = document.getElementById('info'); // where info is displayed to
 var turnSpinner = document.getElementById('turn_spinner'); // spinner for waiting for opponent turn 
 
 // globals
-var boardSize = 19;
 var ctx = canvas.getContext('2d'); // canvas context
 var me = new Peer({ key: 'djdn2sprx3kdquxr' }); // user's peer connection
 var connection = null; // connection to the other player
 var myTurn = false; // who's turn is it?
 var color = null; // user's stone color
 var opponent = null; // id of the opponent player
-var squareSize = canvas.width / boardSize; // size of a board square
+var squareSize = canvas.width / BOARD_SIZE; // size of a board square
 var board = new Board(); // the game board
 
 function connect() {
