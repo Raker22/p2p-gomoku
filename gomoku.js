@@ -49,13 +49,15 @@ function Board() {
 
 Board.prototype = Object.create(Sprite.prototype);
 
-Board.prototype.clearBoard = function() {
+Board.prototype.clear = function() {
     // sets all cells to 0
     for(var i = 0; i < BOARD_SIZE; i++){
         for(var j = 0; j < BOARD_SIZE; j++) {
-            data[i][j] = 0;
+            this.data[i][j] = 0;
         }
     }
+
+    this.draw();
 };
 
 Board.prototype.draw = function() {
@@ -112,11 +114,11 @@ Board.prototype.checkWin = function(color, row, col) {
         for (var n = 1; n >= -1; n -= 2) {
             // check in the direction and the opposite
             var dRow = WIN_DIRECTIONS[i][0] * n;
-            var dCol = WIN_DIRECTIONS[i][0] * n;
+            var dCol = WIN_DIRECTIONS[i][1] * n;
             var checkRow = row + dRow;
             var checkCol = col + dCol;
 
-            while (this.isValid(checkRow, checkCol) && this.data[checkRow, checkCol] === color) {
+            while (this.isValid(checkRow, checkCol) && this.data[checkRow][checkCol] === color) {
                 // continue until the edge of the board or not this color is reached
                 numInRow++;
                 checkRow += dRow;
@@ -185,13 +187,12 @@ var me = new Peer({ key: 'djdn2sprx3kdquxr' }); // user's peer connection
 var connection = null; // connection to the other player
 var myTurn = false; // who's turn is it?
 var color = null; // user's stone color
-var opponent = null; // id of the opponent player
 var cellSize = canvas.width / BOARD_SIZE; // size of a board square
 var board = new Board(); // the game board
 
 function connect() {
     // attempt to connect if the user has entered an opponent id
-    opponent = opponentId.value;
+    var opponent = opponentId.value;
 
     if (opponent.length > 0) {
         // disable connection elements
@@ -209,7 +210,7 @@ function connect() {
             hide(connectionSpinner);
             color = BLACK;
             setupConnection(conn);
-            board.draw();
+            board.clear();
             // initiating player makes first move
             info.innerHTML = INFO_TURN;
             myTurn = true;
@@ -229,7 +230,7 @@ function setupConnection(conn) {
         // place the stone
         if (board.addStone(color * -1, row, col)) {
             // the other player won
-            info.innerHTML = 'Player "' + opponent + '"' + INFO_WON;
+            info.innerHTML = 'Player "' + opponentId.value + '"' + INFO_WON;
             connection.close();
         }
         else {
@@ -315,14 +316,15 @@ me.on('open', function() {
 
 me.on('connection', function(conn) {
     if (connection === null) {
-        // if not connected disable connection elements
+        // if not connected disable set peer id and disable connection elements
+        opponentId.value = conn.peer;
         disableConnect(true);
 
         // set up connection initiated by other player
         connection = conn;
         color = WHITE;
         setupConnection(connection);
-        board.draw();
+        board.clear();
         // player being connected to waits
         show(turnSpinner);
         info.innerHTML = INFO_WAIT;
