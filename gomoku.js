@@ -9,24 +9,29 @@ function Sprite(x, y, width, height, imageSrc) {
     this.image = new Image(); // sprite image
 
     this.setImage = function(imageSrc) {
-        image.src = imageSrc;
+        this.image.src = imageSrc;
     };
 
     this.draw = function() {
         // render the sprite to the canvas
-        ctx.drawImage(image, x, y, width, height);
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
     };
 
+    // set the sprite to render whenever the image is loaded
+    var self = this;
+    this.image.addEventListener('load', function() {
+        self.draw();
+    });
     // set image src
     this.setImage(imageSrc);
 }
 
 function Board() {
     // extends sprite
-    Sprite.call(this, 0, 0, canvas.width, canvas.height, null);
+    Sprite.call(this, 0, 0, canvas.width, canvas.height, 'src/board.jpg');
 
     this.lineColor = 0x000000; // line color
-    this.data = []; // 2D array
+    this.data = []; // 2d array of cells
     
     this.clearBoard = function() {
         // sets all cells to 0
@@ -39,7 +44,7 @@ function Board() {
 
     this.drawBoard = function() {
         // render the background and board lines
-        board.draw();
+        this.draw();
         
         // draw the lines
         this._drawLines();
@@ -52,8 +57,8 @@ function Board() {
         for(count = 0; count <= boardSize; count++)
         {
             ctx.beginPath();
-            ctx.moveTo(50,50 + count*cellSize);
-            ctx.lineTo(50 + cellSize*boardSize, 50 + count*cellSize);
+            ctx.moveTo(0, count * cellSize);
+            ctx.lineTo(canvas.width, count * cellSize);
             ctx.stroke();
             ctx.closePath();
         }
@@ -61,8 +66,8 @@ function Board() {
         for(count = 0; count <= boardSize; count++)
         {
             ctx.beginPath();
-            ctx.moveTo(50 + count*cellSize,50);
-            ctx.lineTo(50 + count*cellSize,50 + cellSize*boardSize);
+            ctx.moveTo(count * cellSize, 0);
+            ctx.lineTo(count * cellSize, canvas.height);
             ctx.stroke();
             ctx.closePath();
         }
@@ -70,10 +75,10 @@ function Board() {
 
     this.addStone = function(color, row, col) {
         // add the stone to the specified box
-        board[row][col] = color;
+        this.data[row][col] = color;
         
         //Add Stone Sprite to canvas and refresh page
-        
+        new Stone(color, row, col);
         
         // check for win
         return this.checkWin(color);
@@ -81,30 +86,30 @@ function Board() {
 
     //Check all directions from(-5 -> 0 ) to (0 -> +5)
     this.checkWin = function(row, col, stoneColor) {
-        var i;
+        /*var i;
         var check = false;
         
         for(i = 0; i < 6; i++)
         {
             //left/right check
-            if((board.data[row-5+i,col] && board.data[row-4+i,col] &&
-                board.data[row-3+i,col] && board.data[row-2+i,col] &&
-                board.data[row-1+i,col] && board.data[row+i,col]) === stoneColor)
+            if((this.data[row-5+i,col] && this.data[row-4+i,col] &&
+                this.data[row-3+i,col] && this.data[row-2+i,col] &&
+                this.data[row-1+i,col] && this.data[row+i,col]) === stoneColor)
                 check = true;
             //up/down check
-            if((board.data[row,col-5+i] && board.data[row,col-4+i] &&
-                board.data[row,col-3+i] && board.data[row,col-2+i] &&
-                board.data[row,col-1+i] && board.data[row,col+i]) === stoneColor)
+            if((this.data[row,col-5+i] && this.data[row,col-4+i] &&
+                this.data[row,col-3+i] && this.data[row,col-2+i] &&
+                this.data[row,col-1+i] && this.data[row,col+i]) === stoneColor)
                 check = true;    
             //LeftUp/RightDown Check
-            if((board.data[row-5+i,col-5+i] && board.data[row-4+i,col-4+i] &&
-                board.data[row-3+i,col-3+i] && board.data[row-2+i,col-2+i] &&
-                board.data[row-1+i,col-1+i] && board.data[row+i,col+i]) === stoneColor)
+            if((this.data[row-5+i,col-5+i] && this.data[row-4+i,col-4+i] &&
+                this.data[row-3+i,col-3+i] && this.data[row-2+i,col-2+i] &&
+                this.data[row-1+i,col-1+i] && this.data[row+i,col+i]) === stoneColor)
                 check = true;
             //RightUp/LeftDown Check
             
         }
-        // check if the corresponding player won
+        // check if the corresponding player won*/
         return false;
     };
 
@@ -124,11 +129,13 @@ function Board() {
 
         this.data.push(row);
     }
+
+    this.drawBoard();
 }
 
 function Stone(color, row, col) {
     // extends Sprite
-    Sprite.call(this, col * cellSize, row * cellSize, cellSize, cellSize, '' + color);
+    Sprite.call(this, col * cellSize, row * cellSize, cellSize, cellSize, 'src/stone' + color + '.png');
     
     this.color = color; // stone color
 }
@@ -184,6 +191,7 @@ function connect() {
             hide(connectionSpinner);
             color = BLACK;
             setupConnection(conn);
+            board.drawBoard();
             // initiating player makes first move
             info.innerHTML = INFO_TURN;
             myTurn = true;
@@ -201,7 +209,7 @@ function setupConnection(conn) {
         var col = data.col;
 
         // place the stone
-        if (board.placeStone(color * -1, row, col)) {
+        if (board.addStone(color * -1, row, col)) {
             // the other player won
             info.innerHTML = 'Player "' + opponent + '"' + INFO_WON;
             connection.close();
@@ -209,6 +217,7 @@ function setupConnection(conn) {
         else {
             // set to the user's turn
             info.innerHTML = INFO_TURN + ' Last stone placed at (' + row + ',' + col + ').';
+            hide(turnSpinner);
             myTurn = true;
         }
     });
@@ -262,17 +271,18 @@ canvas.addEventListener('click', function(e) {
 
         if (board.isEmpty(row, col)) {
             // stone can be placed there
-            if (board.placeStone(color, row, col)) {
+            if (board.addStone(color, row, col)) {
                 // the user won
                 info.innerHTML = 'You' + INFO_WON;
             }
             else {
                 // inform the user that we are waiting on their opponent
                 show(turnSpinner);
-                infor.innerHTML = INFO_WAIT;
+                info.innerHTML = INFO_WAIT;
             }
 
             myTurn = false;
+            connection.send({ row: row, col: col });
         }
         else {
             alert('There is already a stone at (' + row + ',' + col + ')');
@@ -294,6 +304,9 @@ me.on('connection', function(conn) {
         connection = conn;
         color = WHITE;
         setupConnection(connection);
+        board.drawBoard();
+        // player being connected to waits
+        info.innerHTML = INFO_WAIT;
     }
 });
 
