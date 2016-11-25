@@ -32,6 +32,7 @@ function Board() {
 
     this.lineColor = 0x000000; // line color
     this.data = []; // 2d array of cells
+    this.numStones = 0;
     
     for (var i = 0; i < BOARD_SIZE; i++) {
         // create board data
@@ -57,6 +58,7 @@ Board.prototype.clear = function() {
         }
     }
 
+    this.numStones = 0;
     this.draw();
 };
 
@@ -97,6 +99,7 @@ Board.prototype.addStone = function(color, row, col) {
     
     //Add Stone Sprite to canvas and refresh page
     new Stone(color, row, col);
+    this.numStones++;
     
     // check for win
     return this.checkWin(color, row, col);
@@ -171,6 +174,7 @@ var INFO_START = 'Enter a player\'s ID and click "Connect" to play Gomoku with t
 var INFO_TURN = 'Click an empty square to place a stone.';
 var INFO_WAIT = 'Wait for the other player to place a stone.';
 var INFO_WON = ' won the game.';
+var INFO_DRAW = 'Draw game against player ';
 
 // html elements
 var canvas = document.getElementById('canvas'); // canvas to be render to
@@ -235,9 +239,17 @@ function setupConnection(conn) {
         }
         else {
             // set to the user's turn
-            info.innerHTML = INFO_TURN + ' Last stone placed at (' + row + ',' + col + ').';
-            hide(turnSpinner);
-            myTurn = true;
+            if (board.numStones === BOARD_SIZE * BOARD_SIZE) {
+                // draw game
+                info.innerHTML = INFO_DRAW + '"' + opponentId.value + '"' + '.';
+                connection.close();
+            }
+            else {
+                // wait for a cell to be clicked
+                info.innerHTML = INFO_TURN + ' Last stone placed at (' + row + ',' + col + ').';
+                hide(turnSpinner);
+                myTurn = true;
+            }
         }
     });
 
@@ -296,8 +308,15 @@ canvas.addEventListener('click', function(e) {
             }
             else {
                 // inform the user that we are waiting on their opponent
-                show(turnSpinner);
-                info.innerHTML = INFO_WAIT;
+                if (board.numStones === BOARD_SIZE * BOARD_SIZE) {
+                    // draw game
+                    info.innerHTML = INFO_DRAW + '"' + opponentId.value + '"' + '.';
+                }
+                else {
+                    // wait for opponent
+                    show(turnSpinner);
+                    info.innerHTML = INFO_WAIT;
+                }
             }
 
             myTurn = false;
@@ -349,3 +368,13 @@ me.on('error', function(err) {
 
 connectButton.addEventListener('click', connect);
 info.innerHTML = INFO_START;
+
+/* Script to set up draw game (Use on both clients)
+// need to adjust NUM_TO_WIN
+// -1 for initiating user to cause draw
+// -2 for opponent user to cause draw
+for (var i = 0; i < BOARD_SIZE * BOARD_SIZE - 1; i++) {
+    var c = i % 2 === 0 ? BLACK : WHITE;
+    board.addStone(c, Math.floor(i / BOARD_SIZE), i % BOARD_SIZE) 
+}
+*/
