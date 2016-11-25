@@ -1,107 +1,160 @@
 // P2P Gomoku
 // Get 5 in a row taking turns placing stones on a 19x19 board
-
+//
 function Sprite(x, y, width, height, imageSrc) {
+    var self = this;
     this.x = x; // sprite offset from the left of the canvas
     this.y = y; // sprite offset from the top of the canvas
     this.width = width; // width of the sprite
     this.height = height; // height of the sprite
     this.image = new Image(); // sprite image
 
-    this.setImage = function(imageSrc) {
-        // set the image src
-    };
-
-    this.draw = function() {
-        // render the sprite
-    };
-
+    // set the sprite to render whenever the image is loaded
+    this.image.addEventListener('load', function() {
+        self.draw();
+    });
     // set image src
     this.setImage(imageSrc);
 }
 
+Sprite.prototype.setImage = function(imageSrc) {
+    this.image.src = imageSrc;
+};
+
+Sprite.prototype.draw = function() {
+    // render the sprite to the canvas
+    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+};
+
 function Board() {
-    // extends Sprite
+    // extends sprite
+    Sprite.call(this, 0, 0, canvas.width, canvas.height, 'src/board.jpg');
 
     this.lineColor = 0x000000; // line color
-    this.data = [];
+    this.data = []; // 2d array of cells
+    
+    for (var i = 0; i < BOARD_SIZE; i++) {
+        // create board data
+        var row = [];
 
-    this.draw = function() {
-        // render the background and board lines
-        Sprite.draw.call(this);
-        
-        // draw the lines
-        this._drawLines();
-    };
-
-    this._drawLines = function(){
-        //draws lines on canvas to represent
-    };
-
-    this.addStone = function(color, row, col) {
-        // add the stone to the specified box
-
-        // check for win
-        return this.checkWin(color, row, col);
-    };
-
-    this.checkWin = function(color, row, col) {
-        // check if the corresponding player won
-        var checkRow = row;
-        var checkCol = col;
-
-        for (var i = 0; i < WIN_DIRECTIONS.length; i++) {
-            // check each direction starting at the stone
-            var numInRow = 1; // this stone plus the other stones in the line
-
-            for (var n = 1; n >= -1; n -= 2) {
-                // check in the direction and the opposite
-                var dRow = WIN_DIRECTIONS[i][0] * n;
-                var dCol = WIN_DIRECTIONS[i][0] * n;
-                var checkRow = row + dRow;
-                var checkCol = col + dCol;
-
-                while (this.isValid(checkRow, checkCol) && this.data[checkRow, checkCol] === color) {
-                    // continue until the edge of the board or not this color is reached
-                    numInRow++;
-                    checkRow += dRow;
-                    checkCol += dCol;
-                }
-
-                if (numInRow >= NUM_TO_WIN) {
-                    // there are enough in a row so someone won
-                    return true;
-                }
-            }
+        for (var n = 0; n < BOARD_SIZE; n++) {
+            row.push(0);
         }
 
-        // if we got to the end then 
-        return false;
-    };
+        this.data.push(row);
+    }
 
-    this.isValid = function(row, col) {
-        // space is on the board
-        return row >= 0 &&
-            row < BOARD_SIZE &&
-            col >= 0 &&
-            col < BOARD_SIZE;
-    };
-
-    this.isEmpty = function(row, col) {
-        // check if the space is open
-        return this.data[row][col] === EMPTY;
-    };
-
-    // init data to boardSize x boardSize array of 0s
+    this.draw();
 }
 
-function Stone(color) {
+Board.prototype = Object.create(Sprite.prototype);
+
+Board.prototype.clearBoard = function() {
+    // sets all cells to 0
+    for(var i = 0; i < BOARD_SIZE; i++){
+        for(var j = 0; j < BOARD_SIZE; j++) {
+            data[i][j] = 0;
+        }
+    }
+};
+
+Board.prototype.draw = function() {
+    // render the background and board lines
+    Sprite.prototype.draw.call(this);
+    
+    // draw the lines
+    this._drawLines();
+};
+
+Board.prototype._drawLines = function(){
+    //draws lines on canvas to represent
+    var count;
+    //Horizontal Lines
+    for(count = 0; count <= BOARD_SIZE; count++)
+    {
+        ctx.beginPath();
+        ctx.moveTo(0, count * cellSize);
+        ctx.lineTo(canvas.width, count * cellSize);
+        ctx.stroke();
+        ctx.closePath();
+    }
+    //Vertical Lines
+    for(count = 0; count <= BOARD_SIZE; count++)
+    {
+        ctx.beginPath();
+        ctx.moveTo(count * cellSize, 0);
+        ctx.lineTo(count * cellSize, canvas.height);
+        ctx.stroke();
+        ctx.closePath();
+    }
+};
+
+Board.prototype.addStone = function(color, row, col) {
+    // add the stone to the specified box
+    this.data[row][col] = color;
+    
+    //Add Stone Sprite to canvas and refresh page
+    new Stone(color, row, col);
+    
+    // check for win
+    return this.checkWin(color, row, col);
+};
+
+Board.prototype.checkWin = function(color, row, col) {
+    // check if the corresponding player won
+    var checkRow = row;
+    var checkCol = col;
+
+    for (var i = 0; i < WIN_DIRECTIONS.length; i++) {
+        // check each direction starting at the stone
+        var numInRow = 1; // this stone plus the other stones in the line
+
+        for (var n = 1; n >= -1; n -= 2) {
+            // check in the direction and the opposite
+            var dRow = WIN_DIRECTIONS[i][0] * n;
+            var dCol = WIN_DIRECTIONS[i][0] * n;
+            var checkRow = row + dRow;
+            var checkCol = col + dCol;
+
+            while (this.isValid(checkRow, checkCol) && this.data[checkRow, checkCol] === color) {
+                // continue until the edge of the board or not this color is reached
+                numInRow++;
+                checkRow += dRow;
+                checkCol += dCol;
+            }
+
+            if (numInRow >= NUM_TO_WIN) {
+                // there are enough in a row so someone won
+                return true;
+            }
+        }
+    }
+
+    // if we got to the end then 
+    return false;
+};
+
+Board.prototype.isValid = function(row, col) {
+    // space is on the board
+    return row >= 0 &&
+        row < BOARD_SIZE &&
+        col >= 0 &&
+        col < BOARD_SIZE;
+};
+
+Board.prototype.isEmpty = function(row, col) {
+    // check if the space is open
+    return this.data[row][col] === EMPTY;
+};
+
+function Stone(color, row, col) {
     // extends Sprite
-
-    this.stoneColor = color; // stone color
-
-    // set image based on stone color
+    Sprite.call(this, col * cellSize, row * cellSize, cellSize, cellSize, 'src/stone' + color + '.png');
+    
+    this.color = color; // stone color
 }
+
+Stone.prototype = Object.create(Sprite.prototype);
 
 // constants
 var WHITE = 1;
@@ -133,7 +186,7 @@ var connection = null; // connection to the other player
 var myTurn = false; // who's turn is it?
 var color = null; // user's stone color
 var opponent = null; // id of the opponent player
-var squareSize = canvas.width / BOARD_SIZE; // size of a board square
+var cellSize = canvas.width / BOARD_SIZE; // size of a board square
 var board = new Board(); // the game board
 
 function connect() {
@@ -156,6 +209,7 @@ function connect() {
             hide(connectionSpinner);
             color = BLACK;
             setupConnection(conn);
+            board.draw();
             // initiating player makes first move
             info.innerHTML = INFO_TURN;
             myTurn = true;
@@ -173,7 +227,7 @@ function setupConnection(conn) {
         var col = data.col;
 
         // place the stone
-        if (board.placeStone(color * -1, row, col)) {
+        if (board.addStone(color * -1, row, col)) {
             // the other player won
             info.innerHTML = 'Player "' + opponent + '"' + INFO_WON;
             connection.close();
@@ -181,6 +235,7 @@ function setupConnection(conn) {
         else {
             // set to the user's turn
             info.innerHTML = INFO_TURN + ' Last stone placed at (' + row + ',' + col + ').';
+            hide(turnSpinner);
             myTurn = true;
         }
     });
@@ -229,22 +284,23 @@ canvas.addEventListener('click', function(e) {
     if (myTurn) {
         // place a stone in the box clicked if it is this player's turn and it is empty
         // determine row and column
-        var row = Math.floor(e.offsetY / squareSize);
-        var col = Math.floor(e.offsetX / squareSize);
+        var row = Math.floor(e.offsetY / cellSize);
+        var col = Math.floor(e.offsetX / cellSize);
 
         if (board.isEmpty(row, col)) {
             // stone can be placed there
-            if (board.placeStone(color, row, col)) {
+            if (board.addStone(color, row, col)) {
                 // the user won
                 info.innerHTML = 'You' + INFO_WON;
             }
             else {
                 // inform the user that we are waiting on their opponent
                 show(turnSpinner);
-                infor.innerHTML = INFO_WAIT;
+                info.innerHTML = INFO_WAIT;
             }
 
             myTurn = false;
+            connection.send({ row: row, col: col });
         }
         else {
             alert('There is already a stone at (' + row + ',' + col + ')');
@@ -266,6 +322,10 @@ me.on('connection', function(conn) {
         connection = conn;
         color = WHITE;
         setupConnection(connection);
+        board.draw();
+        // player being connected to waits
+        show(turnSpinner);
+        info.innerHTML = INFO_WAIT;
     }
 });
 
